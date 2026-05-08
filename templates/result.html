@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Resume Screener — Results</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #0a0c12;
+  --surface: #111520;
+  --card:    #181d2e;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text:    #e4e6f0;
+  --muted:   #6e7490;
+  --accent:  #5b8cf7;
+  --purple:  #a78bfa;
+  --green:   #34d399;
+  --amber:   #fbbf24;
+  --red:     #f87171;
+  --blue:    #60a5fa;
+  --font:    'Sora', sans-serif;
+  --mono:    'JetBrains Mono', monospace;
+  --r:       14px;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; line-height:1.6; }
+
+.fit-excellent .ring-arc { stroke:#34d399; }
+.fit-excellent.score-num  { color:#34d399; }
+.fit-good .ring-arc       { stroke:#60a5fa; }
+.fit-good.score-num       { color:#60a5fa; }
+.fit-moderate .ring-arc   { stroke:#fbbf24; }
+.fit-moderate.score-num   { color:#fbbf24; }
+.fit-needs-work .ring-arc { stroke:#f97316; }
+.fit-needs-work.score-num { color:#f97316; }
+.fit-low .ring-arc        { stroke:#f87171; }
+.fit-low.score-num        { color:#f87171; }
+
+header {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:1.1rem 2rem; display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:100;
+}
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon {
+  width:34px; height:34px; border-radius:9px;
+  background:linear-gradient(135deg,#5b8cf7,#a78bfa);
+  display:flex; align-items:center; justify-content:center;
+}
+.logo-icon svg { width:18px; height:18px; }
+.logo-text { font-size:0.95rem; font-weight:600; }
+.logo-text span { color:var(--muted); font-weight:400; }
+.header-badge {
+  background:rgba(91,140,247,0.1); color:var(--accent);
+  border:1px solid rgba(91,140,247,0.22);
+  padding:4px 14px; border-radius:20px; font-size:11px; font-weight:500;
+}
+main { max-width:1100px; margin:0 auto; padding:2.5rem 1.5rem 5rem; }
+.back-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  background:var(--card); border:1px solid var(--border2);
+  color:var(--text); padding:8px 18px; border-radius:9px;
+  font-size:13px; font-family:var(--font); cursor:pointer;
+  text-decoration:none; margin-bottom:2rem; transition:background 0.18s;
+}
+.back-btn:hover { background:var(--surface); }
+
+.hero {
+  background:var(--surface); border:1px solid var(--border); border-radius:22px;
+  padding:2.5rem; margin-bottom:2rem;
+  display:grid; grid-template-columns:auto 1fr; gap:2.5rem; align-items:center;
+}
+.score-ring-wrap { position:relative; width:140px; height:140px; flex-shrink:0; }
+.score-ring-wrap svg { width:140px; height:140px; transform:rotate(-90deg); }
+.score-ring-inner {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+}
+.score-num   { font-size:2rem; font-weight:700; font-family:var(--mono); }
+.score-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1.2px; }
+.hero-info   { min-width:0; }
+.hero-verdict{ font-size:1.35rem; font-weight:700; margin-bottom:0.4rem; }
+.hero-sub    { color:var(--muted); font-size:0.88rem; margin-bottom:1.5rem; line-height:1.7; }
+.hero-stats  { display:flex; gap:0.75rem; flex-wrap:wrap; }
+.stat-pill {
+  display:flex; align-items:center; gap:8px;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:7px 13px; font-size:12px;
+}
+.stat-pill .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.dot-green { background:var(--green); }
+.dot-amber { background:var(--amber); }
+.dot-red   { background:var(--red); }
+.dot-blue  { background:var(--blue); }
+.stat-pill strong { font-weight:500; }
+
+.section { margin-bottom:2rem; }
+.section-title {
+  font-size:10px; text-transform:uppercase; letter-spacing:1.8px;
+  color:var(--muted); font-weight:600; margin-bottom:1rem;
+  display:flex; align-items:center; gap:10px;
+}
+.section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:1.4rem; }
+.card-title {
+  font-size:11px; font-weight:600; color:var(--muted);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:1rem;
+}
+.tags { display:flex; flex-wrap:wrap; gap:7px; }
+.tag {
+  padding:4px 11px; border-radius:6px;
+  font-size:11px; font-weight:500; font-family:var(--mono); border:1px solid transparent;
+}
+.tag-matched { background:rgba(52,211,153,0.1);  color:#34d399; border-color:rgba(52,211,153,0.2); }
+.tag-missing { background:rgba(248,113,113,0.1); color:#f87171; border-color:rgba(248,113,113,0.2); }
+.tag-extra   { background:rgba(96,165,250,0.1);  color:#60a5fa; border-color:rgba(96,165,250,0.2); }
+
+.ai-list { list-style:none; display:flex; flex-direction:column; gap:8px; }
+.ai-list li {
+  font-size:0.875rem; color:var(--muted); line-height:1.65;
+  padding-left:1rem; position:relative;
+}
+.ai-list li::before {
+  content:''; position:absolute; left:0; top:9px;
+  width:5px; height:5px; border-radius:50%; background:var(--accent);
+}
+.gap-table { width:100%; border-collapse:collapse; font-size:13px; }
+.gap-table th {
+  text-align:left; padding:8px 12px; color:var(--muted); font-weight:500;
+  border-bottom:1px solid var(--border);
+}
+.gap-table td { padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.gap-table tr:last-child td { border-bottom:none; }
+.gap-table tr:hover td { background:rgba(255,255,255,0.02); }
+.badge { display:inline-block; padding:3px 9px; border-radius:5px; font-size:11px; font-weight:500; font-family:var(--mono); }
+.badge-vhigh { background:rgba(239,68,68,0.15);  color:#f87171; }
+.badge-high  { background:rgba(251,191,36,0.15);  color:#fbbf24; }
+.badge-med   { background:rgba(96,165,250,0.15);  color:#60a5fa; }
+.badge-low   { background:rgba(52,211,153,0.15);  color:#34d399; }
+
+.rec-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:1.25rem; display:flex; flex-direction:column; gap:10px; }
+.rec-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.rec-skill  { font-weight:600; font-size:0.95rem; }
+.rec-time   { font-size:11px; color:var(--muted); font-family:var(--mono); }
+.rec-courses{ display:flex; flex-direction:column; gap:6px; }
+.rec-course { font-size:12px; color:var(--muted); padding:6px 10px; background:rgba(255,255,255,0.03); border-radius:6px; border-left:2px solid var(--accent); line-height:1.5; }
+.rec-projects { font-size:11px; color:var(--muted); }
+.rec-projects span { color:var(--text); font-weight:500; }
+
+.roadmap-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem; }
+.phase-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:1.25rem; position:relative; overflow:hidden; }
+.phase-card::before { content:attr(data-phase); position:absolute; top:-10px; right:-10px; font-size:5rem; font-weight:700; opacity:0.035; line-height:1; color:#fff; pointer-events:none; }
+.phase-header { display:flex; align-items:center; gap:8px; margin-bottom:0.75rem; }
+.phase-emoji  { font-size:1.2rem; }
+.phase-label  { font-weight:600; font-size:0.85rem; }
+.phase-month  { font-size:11px; color:var(--muted); font-family:var(--mono); }
+.phase-focus  { font-size:12px; color:var(--muted); margin-bottom:0.75rem; line-height:1.5; }
+.phase-tasks  { display:flex; flex-direction:column; gap:8px; }
+.phase-task   { background:rgba(255,255,255,0.03); border-radius:8px; padding:8px 10px; font-size:12px; }
+.phase-task-skill  { font-weight:500; margin-bottom:3px; }
+.phase-task-course { color:var(--muted); font-size:11px; line-height:1.5; }
+.phase-milestone { margin-top:0.75rem; padding:8px 10px; background:rgba(91,140,247,0.08); border-radius:8px; font-size:11px; color:var(--accent); border:1px solid rgba(91,140,247,0.15); }
+.phase-empty { color:var(--muted); font-size:13px; text-align:center; padding:1rem 0; opacity:0.6; }
+.roadmap-tips { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:1.25rem; }
+.tip-pill { font-size:12px; color:var(--muted); background:var(--card); border:1px solid var(--border); border-radius:8px; padding:8px 12px; line-height:1.5; }
+
+.advice-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+.score-break { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+.sb-item { text-align:center; padding:1rem; background:var(--surface); border-radius:12px; }
+.sb-num  { font-size:1.5rem; font-weight:700; font-family:var(--mono); }
+.sb-lbl  { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+.jobs-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+.job-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:1.2rem; display:flex; flex-direction:column; gap:0.85rem; }
+.job-top { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; }
+.job-title { font-size:0.95rem; font-weight:600; line-height:1.4; }
+.job-company { color:var(--muted); font-size:12px; margin-top:2px; }
+.job-score { min-width:58px; text-align:center; border:1px solid rgba(52,211,153,0.22); background:rgba(52,211,153,0.08); color:var(--green); border-radius:10px; padding:5px 7px; font-family:var(--mono); font-size:13px; font-weight:600; }
+.job-meta { display:flex; flex-wrap:wrap; gap:7px; }
+.job-meta span { color:var(--muted); background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:7px; padding:4px 8px; font-size:11px; }
+.job-explain { color:var(--muted); font-size:12px; line-height:1.65; }
+.job-actions { display:flex; justify-content:space-between; gap:0.75rem; align-items:center; }
+.job-source { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.job-apply { color:var(--accent); text-decoration:none; font-size:12px; font-weight:600; }
+
+@media (max-width:768px) {
+  .hero { grid-template-columns:1fr; text-align:center; }
+  .hero-stats { justify-content:center; }
+  .grid-2,.roadmap-grid,.advice-grid,.score-break,.jobs-grid { grid-template-columns:1fr; }
+  .roadmap-tips { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.7">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+      </svg>
+    </div>
+    <div class="logo-text">ResumeAI <span>/ Results</span></div>
+  </div>
+  <div class="header-badge">AI Analysis Complete</div>
+</header>
+
+<main>
+  <a href="/" class="back-btn">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Analyze another resume
+  </a>
+
+  {% set m     = result.match %}
+  {% set agent = result.agent %}
+  {% set sb    = agent.score_breakdown %}
+
+  {% if m.fit_level == 'Excellent' %}{% set fit_class = 'fit-excellent' %}
+  {% elif m.fit_level == 'Good' %}{% set fit_class = 'fit-good' %}
+  {% elif m.fit_level == 'Moderate' %}{% set fit_class = 'fit-moderate' %}
+  {% elif m.fit_level == 'Needs Work' %}{% set fit_class = 'fit-needs-work' %}
+  {% else %}{% set fit_class = 'fit-low' %}{% endif %}
+
+  {% set circ = 339.3 %}
+  {% set dash = (m.match_percent / 100 * circ) | round(1) %}
+
+  <div class="hero">
+    <div class="score-ring-wrap">
+      <svg viewBox="0 0 120 120" class="{{ fit_class }}">
+        <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+        <circle class="ring-arc" cx="60" cy="60" r="54" fill="none"
+          stroke-width="10" stroke-linecap="round"
+          stroke-dasharray="{{ dash }} {{ circ }}"/>
+      </svg>
+      <div class="score-ring-inner">
+        <div class="score-num {{ fit_class }}">{{ m.match_percent }}%</div>
+        <div class="score-label">Match Score</div>
+      </div>
+    </div>
+    <div class="hero-info">
+      <div class="hero-verdict">{{ agent.headline }}</div>
+      <div class="hero-sub">{{ m.verdict }}</div>
+      <div class="hero-stats">
+        <div class="stat-pill"><div class="dot dot-green"></div><strong>{{ m.total_matched }}</strong>&nbsp;matched</div>
+        <div class="stat-pill"><div class="dot dot-red"></div><strong>{{ m.total_missing }}</strong>&nbsp;missing</div>
+        {% if m.extra %}<div class="stat-pill"><div class="dot dot-blue"></div><strong>{{ m.extra|length }}</strong>&nbsp;bonus</div>{% endif %}
+        {% if result.experience > 0 %}<div class="stat-pill"><div class="dot dot-amber"></div><strong>{{ result.experience }}+ yrs</strong></div>{% endif %}
+        {% if result.education != 'Not specified' %}<div class="stat-pill"><div class="dot dot-blue"></div>{{ result.education }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% set ja = result.job_automation %}
+  {% if ja and ja.matches %}
+  <div class="section">
+    <div class="section-title">Recommended Jobs</div>
+    {% if ja.profile %}
+    <div class="card" style="margin-bottom:1rem">
+      <p style="font-size:0.88rem;color:var(--muted)">
+        Target roles: {{ ja.profile.preferred_roles | join(', ') }}.
+        Seniority: {{ ja.profile.seniority_level | title }}.
+        Sources: {{ ja.sources_used | join(', ') }}.
+      </p>
+    </div>
+    {% endif %}
+    <div class="jobs-grid">
+      {% for jm in ja.matches %}
+      <div class="job-card">
+        <div class="job-top">
+          <div>
+            <div class="job-title">{{ jm.job.title }}</div>
+            <div class="job-company">{{ jm.job.company }} / {{ jm.job.location }}</div>
+          </div>
+          <div class="job-score">{{ jm.match_score }}%</div>
+        </div>
+        <div class="job-meta">
+          <span>{{ jm.job.work_mode.value | title }}</span>
+          <span>{{ jm.matched_skills | length }} matched</span>
+          <span>{{ jm.missing_skills | length }} gaps</span>
+        </div>
+        <div class="job-explain">{{ jm.explanation }}</div>
+        {% if jm.missing_skills %}
+        <div class="tags">
+          {% for s in jm.missing_skills[:5] %}<div class="tag tag-missing">{{ s }}</div>{% endfor %}
+        </div>
+        {% endif %}
+        <div class="job-actions">
+          <div class="job-source">{{ jm.job.source }} / {{ jm.job.source_access.value }}</div>
+          <a class="job-apply" href="{{ jm.job.apply_url }}" target="_blank" rel="noopener">Apply link</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="section">
+    <div class="section-title">AI Assessment</div>
+    <div class="card">
+      <p style="font-size:0.9rem;line-height:1.8;color:var(--muted)">{{ agent.profile_summary }}</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Skills Breakdown</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Matched Skills</div>
+        {% if m.matched %}
+          <div class="tags">{% for s in m.matched %}<div class="tag tag-matched">{{ s }}</div>{% endfor %}</div>
+        {% else %}
+          <p style="color:var(--muted);font-size:13px">No skills matched.</p>
+        {% endif %}
+      </div>
+      <div class="card">
+        <div class="card-title">Missing Skills</div>
+        {% if m.missing %}
+          <div class="tags">{% for s in m.missing %}<div class="tag tag-missing">{{ s }}</div>{% endfor %}</div>
+        {% else %}
+          <p style="color:var(--green);font-size:13px">None — perfect match!</p>
+        {% endif %}
+      </div>
+    </div>
+    {% if m.extra %}
+    <div style="margin-top:1rem">
+      <div class="card">
+        <div class="card-title">Bonus Skills</div>
+        <div class="tags">{% for s in m.extra %}<div class="tag tag-extra">{{ s }}</div>{% endfor %}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if agent.strengths %}
+  <div class="section">
+    <div class="section-title">Your Strengths</div>
+    <div class="card">
+      <ul class="ai-list">{% for s in agent.strengths %}<li>{{ s }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if agent.gaps_analysis %}
+  <div class="section">
+    <div class="section-title">Skill Gap Analysis</div>
+    {% if agent.gaps_analysis[0].skill == 'None' %}
+      <div class="card"><p style="color:var(--green);font-size:0.9rem">No skill gaps — perfect match!</p></div>
+    {% else %}
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="gap-table">
+          <thead><tr><th>Skill</th><th>Priority</th><th>Time</th><th>Impact</th></tr></thead>
+          <tbody>
+            {% for gap in agent.gaps_analysis %}
+            <tr>
+              <td style="font-weight:500;font-family:var(--mono)">{{ gap.skill }}</td>
+              <td>
+                {% if gap.priority == 'Very High' %}<span class="badge badge-vhigh">Very High</span>
+                {% elif gap.priority == 'High' %}<span class="badge badge-high">High</span>
+                {% elif gap.priority == 'Medium' %}<span class="badge badge-med">Medium</span>
+                {% elif gap.priority == 'Low' %}<span class="badge badge-low">Low</span>
+                {% else %}<span style="color:var(--muted);font-size:12px">{{ gap.priority }}</span>{% endif %}
+              </td>
+              <td style="color:var(--muted);font-size:12px;font-family:var(--mono)">{{ gap.time }}</td>
+              <td style="font-size:12px;color:var(--muted)">{{ gap.impact }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if agent.quick_wins and agent.quick_wins[0] != 'No quick wins detected — all gaps require sustained effort.' %}
+  <div class="section">
+    <div class="section-title">Quick Wins (under 3 weeks)</div>
+    <div class="card">
+      <ul class="ai-list">{% for qw in agent.quick_wins %}<li>{{ qw }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if result.recommendations %}
+  <div class="section">
+    <div class="section-title">Learning Recommendations</div>
+    <div class="grid-2">
+      {% for rec in result.recommendations %}
+      <div class="rec-card">
+        <div class="rec-header">
+          <div class="rec-skill">{{ rec.skill | title }}</div>
+          <div class="rec-time">{{ rec.time }}</div>
+        </div>
+        <div class="rec-courses">
+          {% for course in rec.courses[:2] %}<div class="rec-course">{{ course }}</div>{% endfor %}
+        </div>
+        {% if rec.projects %}<div class="rec-projects"><span>Projects:</span> {{ rec.projects | join(', ') }}</div>{% endif %}
+        {% if rec.docs %}<a href="{{ rec.docs }}" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none">Official docs &rarr;</a>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if result.roadmap.phases %}
+  <div class="section">
+    <div class="section-title">3-Month Learning Roadmap</div>
+    <div class="card" style="margin-bottom:1rem">
+      <p style="font-size:0.88rem;color:var(--muted)">{{ result.roadmap.summary }}</p>
+    </div>
+    <div class="roadmap-grid">
+      {% for phase in result.roadmap.phases %}
+      <div class="phase-card" data-phase="{{ phase.phase }}">
+        <div class="phase-header">
+          <div class="phase-emoji">{{ phase.emoji }}</div>
+          <div>
+            <div class="phase-label">{{ phase.label }}</div>
+            <div class="phase-month">{{ phase.month }}</div>
+          </div>
+        </div>
+        <div class="phase-focus">{{ phase.focus }}</div>
+        {% if phase.empty %}
+          <div class="phase-empty">No tasks — smooth sailing!</div>
+        {% else %}
+          <div class="phase-tasks">
+            {% for task in phase.tasks %}
+            <div class="phase-task">
+              <div class="phase-task-skill">{{ task.action }}</div>
+              <div class="phase-task-course">{{ task.course }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <div class="phase-milestone">{{ phase.milestone }}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">{{ phase.week_hint }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if result.roadmap.tips %}
+    <div class="roadmap-tips">
+      {% for tip in result.roadmap.tips %}<div class="tip-pill">{{ tip }}</div>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="section">
+    <div class="section-title">Career Strategy</div>
+    <div class="advice-grid">
+      <div class="card">
+        <div class="card-title">Interview Tips</div>
+        <ul class="ai-list">{% for tip in agent.interview_tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Application Advice</div>
+        <ul class="ai-list">{% for adv in agent.application_advice %}<li>{{ adv }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+  </div>
+
+  {% if agent.long_term %}
+  <div class="section">
+    <div class="section-title">Long-term Strategy</div>
+    <div class="card">
+      <ul class="ai-list">{% for l in agent.long_term %}<li>{{ l }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="section">
+    <div class="section-title">Score Breakdown</div>
+    <div class="score-break">
+      <div class="sb-item"><div class="sb-num" style="color:var(--accent)">{{ sb.match_score }}%</div><div class="sb-lbl">Weighted Match</div></div>
+      <div class="sb-item"><div class="sb-num" style="color:var(--green)">{{ sb.matched_count }}</div><div class="sb-lbl">Skills Matched</div></div>
+      <div class="sb-item"><div class="sb-num" style="color:var(--red)">{{ sb.missing_count }}</div><div class="sb-lbl">Skills Missing</div></div>
+      <div class="sb-item"><div class="sb-num" style="color:var(--text)">{{ sb.skills_count }}</div><div class="sb-lbl">Resume Skills</div></div>
+      <div class="sb-item"><div class="sb-num" style="color:var(--amber)">{% if sb.experience > 0 %}{{ sb.experience }}+{% else %}N/A{% endif %}</div><div class="sb-lbl">Years Exp.</div></div>
+      <div class="sb-item"><div class="sb-num" style="color:var(--blue);font-size:1rem">{{ sb.education }}</div><div class="sb-lbl">Education</div></div>
+    </div>
+  </div>
+
+</main>
+
+{# Inject Jinja data into JS BEFORE raw block — this is the only safe place for Jinja vars to avoid being escaped #}
+
+<script id="cb-data" type="application/json">
+{{ {
+  "matchPercent": m.match_percent,
+  "fitLevel": m.fit_level,
+  "matched": m.matched,
+  "missing": m.missing,
+  "extra": m.extra,
+  "experience": result.experience,
+  "education": result.education
+} | tojson }}
+</script>
+<script>
+var CB_DATA = JSON.parse(document.getElementById('cb-data').textContent);
+</script>
+
+
+
+{% raw %}
+<style>
+:root{--cb-bg:#12141e;--cb-surf:#191d2e;--cb-card:#1f2437;--cb-bdr:rgba(255,255,255,0.07);--cb-bdr2:rgba(255,255,255,0.13);--cb-text:#e2e5f0;--cb-muted:#6b7280;--cb-green:#34d399;--cb-font:'Sora',sans-serif;}
+#cb-fab{position:fixed;bottom:28px;right:28px;z-index:10000;width:60px;height:60px;border-radius:50%;border:none;background:linear-gradient(135deg,#5b8cf7,#a78bfa);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(91,140,247,0.45);transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;}
+#cb-fab:hover{transform:scale(1.1);box-shadow:0 12px 40px rgba(91,140,247,.6);}
+.fab-chat,.fab-close{transition:opacity .2s,transform .2s;position:absolute;}
+.fab-close{opacity:0;transform:rotate(-90deg) scale(.6);}
+#cb-fab.open .fab-chat{opacity:0;transform:rotate(90deg) scale(.6);}
+#cb-fab.open .fab-close{opacity:1;transform:rotate(0) scale(1);}
+#cb-fab::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(91,140,247,.35);animation:cb-ping 2.4s cubic-bezier(0,0,.2,1) infinite;}
+@keyframes cb-ping{0%{transform:scale(1);opacity:.6}75%,100%{transform:scale(1.35);opacity:0}}
+#cb-notif{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:#34d399;border:2px solid #0a0c12;font-size:8px;color:#0a0c12;font-weight:700;display:flex;align-items:center;justify-content:center;transition:transform .3s;}
+#cb-fab.open #cb-notif{transform:scale(0);}
+#cb-win{position:fixed;bottom:102px;right:28px;z-index:9999;width:380px;height:580px;background:var(--cb-bg);border:1px solid var(--cb-bdr2);border-radius:20px;display:flex;flex-direction:column;overflow:hidden;transform:scale(.88) translateY(24px);opacity:0;pointer-events:none;transform-origin:bottom right;transition:transform .3s cubic-bezier(.34,1.4,.64,1),opacity .22s ease;box-shadow:0 24px 64px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.04);}
+#cb-win.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
+@media(max-width:480px){
+  #cb-win{right:12px;left:12px;width:auto;bottom:96px;height:72vh;}
+  #cb-fab{right:16px;bottom:16px;}
+}
+.cb-hdr{padding:14px 16px;background:var(--cb-surf);border-bottom:1px solid var(--cb-bdr);display:flex;align-items:center;gap:10px;flex-shrink:0;position:relative;}
+.cb-hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#5b8cf7,#a78bfa,#5b8cf7);background-size:200% 100%;animation:cb-shimmer 3s linear infinite;}
+@keyframes cb-shimmer{to{background-position:-200% 0}}
+.cb-av-wrap{position:relative;flex-shrink:0;}
+.cb-av{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#5b8cf7,#a78bfa);display:flex;align-items:center;justify-content:center;}
+.cb-dot{position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#34d399;border:2px solid var(--cb-bg);animation:cb-pulse 2s ease-in-out infinite;}
+@keyframes cb-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.cb-hdr-name{font-size:13px;font-weight:600;color:var(--cb-text);line-height:1.2;}
+.cb-hdr-sub{font-size:11px;color:var(--cb-green);margin-top:1px;}
+.cb-x{background:rgba(255,255,255,.05);border:1px solid var(--cb-bdr);border-radius:8px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--cb-muted);flex-shrink:0;transition:background .15s,color .15s;}
+.cb-x:hover{background:rgba(255,255,255,.1);color:var(--cb-text);}
+#cb-msgs{flex:1;overflow-y:auto;padding:16px 14px 8px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;}
+#cb-msgs::-webkit-scrollbar{width:3px;}
+#cb-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
+.cb-row{display:flex;gap:8px;align-items:flex-end;animation:cb-in .25s ease;}
+.cb-row.user{flex-direction:row-reverse;}
+@keyframes cb-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.cb-msg-av{width:28px;height:28px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.cb-row.bot .cb-msg-av{background:linear-gradient(135deg,#5b8cf7,#a78bfa);}
+.cb-row.user .cb-msg-av{background:rgba(255,255,255,.07);border:1px solid var(--cb-bdr2);}
+.cb-bbl{max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.6;word-break:break-word;}
+.cb-row.bot .cb-bbl{background:var(--cb-card);color:#c8cce0;border:1px solid var(--cb-bdr);border-bottom-left-radius:4px;}
+.cb-row.user .cb-bbl{background:linear-gradient(135deg,#5b8cf7,#a78bfa);color:#fff;border-bottom-right-radius:4px;}
+.cb-ts{font-size:10px;color:var(--cb-muted);margin-top:3px;padding:0 4px;}
+.cb-row.user .cb-ts{text-align:right;}
+.cb-typing{display:flex;gap:4px;align-items:center;padding:6px 2px;}
+.cb-typing span{width:6px;height:6px;border-radius:50%;background:#5b8cf7;animation:cb-bounce 1.1s ease-in-out infinite;}
+.cb-typing span:nth-child(2){animation-delay:.18s;background:#8b7cf7;}
+.cb-typing span:nth-child(3){animation-delay:.36s;background:#a78bfa;}
+@keyframes cb-bounce{0%,60%,100%{transform:translateY(0);opacity:.6}30%{transform:translateY(-6px);opacity:1}}
+.cb-welcome{background:var(--cb-surf);border:1px solid rgba(91,140,247,.2);border-radius:14px;padding:16px;margin-bottom:4px;}
+.cb-welcome-title{font-size:14px;font-weight:600;color:var(--cb-text);margin-bottom:6px;}
+.cb-welcome-body{font-size:12px;color:var(--cb-muted);line-height:1.65;}
+.cb-chips{padding:6px 14px 10px;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0;}
+.cb-chip{background:rgba(91,140,247,.08);border:1px solid rgba(91,140,247,.22);color:#8ba8ff;border-radius:20px;padding:5px 12px;font-size:11px;font-family:var(--cb-font);cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s;}
+.cb-chip:hover{background:rgba(91,140,247,.18);border-color:rgba(91,140,247,.45);transform:translateY(-1px);}
+.cb-chip:active{transform:scale(.97);}
+.cb-div{display:flex;align-items:center;gap:8px;padding:4px 0;width:100%;}
+.cb-div::before,.cb-div::after{content:'';flex:1;height:1px;background:var(--cb-bdr);}
+.cb-div span{font-size:10px;color:var(--cb-muted);white-space:nowrap;}
+.cb-inp-area{padding:10px 12px 14px;background:var(--cb-surf);border-top:1px solid var(--cb-bdr);display:flex;align-items:flex-end;gap:8px;flex-shrink:0;}
+#cb-inp{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--cb-bdr2);border-radius:14px;color:var(--cb-text);font-family:var(--cb-font);font-size:13px;padding:10px 14px;resize:none;outline:none;max-height:110px;line-height:1.5;transition:border-color .18s,background .18s;}
+#cb-inp::placeholder{color:#353a52;}
+#cb-inp:focus{border-color:rgba(91,140,247,.5);background:rgba(91,140,247,.04);}
+#cb-btn{width:40px;height:40px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,#5b8cf7,#a78bfa);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .15s,transform .15s;}
+#cb-btn:hover{opacity:.88;transform:scale(1.06);}
+#cb-btn:active{transform:scale(.95);}
+#cb-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.cb-foot{text-align:center;font-size:10px;color:#252840;padding:5px 0 3px;flex-shrink:0;}
+.cb-foot span{color:#353a58;}
+</style>
+
+<button id="cb-fab" onclick="cbToggle()" aria-label="Open AI Career Assistant">
+  <div id="cb-notif">1</div>
+  <svg class="fab-chat" width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.7">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+  </svg>
+  <svg class="fab-close" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+  </svg>
+</button>
+
+<div id="cb-win" role="dialog" aria-label="AI Career Assistant">
+  <div class="cb-hdr">
+    <div class="cb-av-wrap">
+      <div class="cb-av">
+        <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.7" width="20" height="20">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+      </div>
+      <div class="cb-dot"></div>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div class="cb-hdr-name">Career Assistant</div>
+      <div class="cb-hdr-sub">&#9679; AI Online &mdash; powered by Claude</div>
+    </div>
+    <button class="cb-x" onclick="cbToggle()" aria-label="Close">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="cb-msgs">
+    <div class="cb-welcome">
+      <div class="cb-welcome-title">&#128075; Hi! I'm your Career Assistant</div>
+      <div class="cb-welcome-body">I've already seen your resume analysis. Ask me anything — interview prep, skill tips, salary, career roadmap — in English, Hindi, or Hinglish!</div>
+    </div>
+    <div class="cb-row bot">
+      <div class="cb-msg-av">
+        <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8" width="16" height="16">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="cb-bbl">Aapki resume analysis ho gayi! Kuch bhi poochho &#128640;</div>
+        <div class="cb-ts" id="cb-ts0"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cb-chips" id="cb-chips">
+    <div class="cb-div"><span>Suggested questions</span></div>
+    <button class="cb-chip" onclick="cbChip(this)">Interview tips dijiye</button>
+    <button class="cb-chip" onclick="cbChip(this)">Missing skills kahan seekhun?</button>
+    <button class="cb-chip" onclick="cbChip(this)">Salary kitni expect karein?</button>
+    <button class="cb-chip" onclick="cbChip(this)">Resume improve karein</button>
+    <button class="cb-chip" onclick="cbChip(this)">3-month plan samjhao</button>
+  </div>
+
+  <div class="cb-inp-area">
+    <textarea id="cb-inp" rows="1" placeholder="Kuch bhi poochho..."
+      onkeydown="cbKey(event)" oninput="cbResize(this)"></textarea>
+    <button id="cb-btn" onclick="cbSend()" aria-label="Send">
+      <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2" width="17" height="17">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+      </svg>
+    </button>
+  </div>
+  <div class="cb-foot">Powered by <span>Claude AI &middot; Anthropic</span></div>
+</div>
+
+<script>
+(function(){
+  var D = window.CB_DATA || {};
+  var SYSTEM = 'You are a helpful AI Career Assistant.\n'
+    + 'Resume: Match=' + D.matchPercent + '% (' + D.fitLevel + ')\n'
+    + 'Matched: ' + (D.matched||[]).join(', ') + '\n'
+    + 'Missing: ' + (D.missing||[]).join(', ') + '\n'
+    + 'Bonus: '   + (D.extra||[]).join(', ')   + '\n'
+    + 'Exp: ' + D.experience + ' yrs | Edu: ' + D.education + '\n'
+    + 'Be concise, warm, practical. Reply in same language as user. Max 160 words.';
+
+  var hist=[], busy=false, isOpen=false;
+  function now(){ return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+  document.getElementById('cb-ts0').textContent = now();
+
+  var BOT_SVG = '<svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8" width="16" height="16">'
+    +'<path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>';
+
+  window.cbToggle = function(){
+    isOpen=!isOpen;
+    document.getElementById('cb-fab').classList.toggle('open',isOpen);
+    document.getElementById('cb-win').classList.toggle('open',isOpen);
+    if(isOpen){
+      document.getElementById('cb-notif').style.display='none';
+      setTimeout(function(){ document.getElementById('cb-inp').focus(); },280);
+    }
+  };
+  window.cbChip = function(btn){
+    document.getElementById('cb-chips').style.display='none';
+    document.getElementById('cb-inp').value=btn.textContent.trim();
+    cbSend();
+  };
+  window.cbResize = function(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,110)+'px'; };
+  window.cbKey   = function(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();cbSend();} };
+
+  function addMsg(role,text){
+    var msgs=document.getElementById('cb-msgs');
+    var row=document.createElement('div'); row.className='cb-row '+role;
+    var av=document.createElement('div');  av.className='cb-msg-av';
+    av.innerHTML=(role==='bot')?BOT_SVG:'&#128100;';
+    var wrap=document.createElement('div');
+    var bbl=document.createElement('div'); bbl.className='cb-bbl';
+    text.split('\n').forEach(function(line,index){
+      if(index) bbl.appendChild(document.createElement('br'));
+      bbl.appendChild(document.createTextNode(line));
+    });
+    var ts=document.createElement('div');  ts.className='cb-ts'; ts.textContent=now();
+    wrap.appendChild(bbl); wrap.appendChild(ts);
+    row.appendChild(av); row.appendChild(wrap);
+    msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
+  }
+  function showTyping(){
+    var msgs=document.getElementById('cb-msgs');
+    var row=document.createElement('div'); row.className='cb-row bot'; row.id='cb-ty';
+    var av=document.createElement('div');  av.className='cb-msg-av'; av.innerHTML=BOT_SVG;
+    var bbl=document.createElement('div'); bbl.className='cb-bbl';
+    bbl.innerHTML='<div class="cb-typing"><span></span><span></span><span></span></div>';
+    row.appendChild(av); row.appendChild(bbl);
+    msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
+  }
+  function hideTyping(){ var e=document.getElementById('cb-ty'); if(e) e.remove(); }
+
+  window.cbSend = async function(){
+    if(busy) return;
+    var inp=document.getElementById('cb-inp');
+    var text=inp.value.trim(); if(!text) return;
+    inp.value=''; inp.style.height='auto';
+    addMsg('user',text);
+    hist.push({role:'user',content:text});
+    busy=true; document.getElementById('cb-btn').disabled=true;
+    showTyping();
+    try{
+      var res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:hist.slice(-12),system:SYSTEM})});
+      hideTyping();
+      var data=await res.json();
+      var reply=data.reply||'Kuch issue aa gaya, dobara try karein.';
+      if(!res.ok){
+        addMsg('bot',reply);
+        return;
+      }
+      addMsg('bot',reply);
+      hist.push({role:'assistant',content:reply});
+    }catch(err){
+      hideTyping();
+      addMsg('bot','Server se connect nahi ho pa raha. Flask app running hai aur internet/API key sahi hai, yeh check karein.');
+      console.error(err);
+    }finally{
+      busy=false;
+      document.getElementById('cb-btn').disabled=false;
+      document.getElementById('cb-inp').focus();
+    }
+  };
+})();
+</script>
+
+
+{% endraw %}
+
+</body>
+</html>

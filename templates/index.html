@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Resume Screener — Career Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:        #0a0c10;
+  --surface:   #111318;
+  --card:      #181c26;
+  --border:    rgba(255,255,255,0.06);
+  --border2:   rgba(255,255,255,0.11);
+  --text:      #e2e4ed;
+  --muted:     #6b7080;
+  --accent:    #6c8fff;
+  --accent2:   #b07ef8;
+  --green:     #3ecf8e;
+  --amber:     #f4a942;
+  --font:      'Sora', sans-serif;
+  --mono:      'JetBrains Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Animated grid background ── */
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(108,143,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(108,143,255,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 100%);
+}
+
+/* ── Glowing orbs ── */
+.orb {
+  position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+  filter: blur(80px);
+}
+.orb-1 {
+  width: 500px; height: 500px;
+  background: rgba(108,143,255,0.07);
+  top: -120px; left: -100px;
+  animation: drift1 14s ease-in-out infinite alternate;
+}
+.orb-2 {
+  width: 400px; height: 400px;
+  background: rgba(176,126,248,0.06);
+  bottom: -80px; right: -60px;
+  animation: drift2 18s ease-in-out infinite alternate;
+}
+@keyframes drift1 { to { transform: translate(40px, 30px); } }
+@keyframes drift2 { to { transform: translate(-30px, -40px); } }
+
+/* ── Page layout ── */
+.page {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+/* ── Left panel — branding ── */
+.left-panel {
+  display: flex; flex-direction: column;
+  justify-content: center; padding: 4rem 4rem 4rem 5rem;
+  border-right: 1px solid var(--border);
+}
+
+.logo-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 3.5rem;
+}
+.logo-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  background: linear-gradient(135deg, #6c8fff, #b07ef8);
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-icon svg { width: 22px; height: 22px; }
+.logo-name {
+  font-size: 15px; font-weight: 600; color: var(--text);
+  letter-spacing: -0.2px;
+}
+.logo-name span { color: var(--muted); font-weight: 400; }
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(108,143,255,0.1);
+  border: 1px solid rgba(108,143,255,0.2);
+  border-radius: 20px; padding: 5px 14px;
+  font-size: 11px; font-weight: 500; color: var(--accent);
+  letter-spacing: 0.5px; text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+.hero-tag .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+h1 {
+  font-size: clamp(2rem, 3.2vw, 2.8rem);
+  font-weight: 700; line-height: 1.15;
+  letter-spacing: -1px; margin-bottom: 1.2rem;
+  color: #f0f2f8;
+}
+h1 .grad {
+  background: linear-gradient(90deg, #6c8fff, #b07ef8, #6c8fff);
+  background-size: 200% auto;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+@keyframes shimmer { to { background-position: 200% center; } }
+
+.hero-sub {
+  font-size: 15px; color: var(--muted); line-height: 1.75;
+  max-width: 420px; margin-bottom: 3rem;
+}
+
+/* ── Feature pills ── */
+.features {
+  display: flex; flex-direction: column; gap: 14px;
+  margin-bottom: 3rem;
+}
+.feature {
+  display: flex; align-items: center; gap: 14px;
+}
+.feature-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.fi-blue   { background: rgba(108,143,255,0.12); }
+.fi-purple { background: rgba(176,126,248,0.12); }
+.fi-green  { background: rgba(62,207,142,0.12); }
+.fi-amber  { background: rgba(244,169,66,0.12); }
+.feature-icon svg { width: 18px; height: 18px; }
+.feature-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.feature-text strong { color: var(--text); font-weight: 500; display: block; font-size: 13px; }
+
+/* ── Stats row ── */
+.stats-row {
+  display: flex; gap: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.stat-item { display: flex; flex-direction: column; gap: 2px; }
+.stat-num {
+  font-family: var(--mono); font-size: 1.5rem; font-weight: 500;
+  color: var(--text); line-height: 1;
+}
+.stat-lbl { font-size: 11px; color: var(--muted); letter-spacing: 0.3px; }
+
+/* ── Right panel — form ── */
+.right-panel {
+  display: flex; flex-direction: column;
+  justify-content: center; padding: 4rem;
+  background: rgba(255,255,255,0.015);
+}
+
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 22px;
+  padding: 2.5rem;
+  max-width: 440px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.form-title {
+  font-size: 18px; font-weight: 600; color: #f0f2f8;
+  margin-bottom: 4px;
+}
+.form-sub {
+  font-size: 12px; color: var(--muted); margin-bottom: 2rem;
+}
+
+/* ── Upload zone ── */
+.upload-zone {
+  border: 1.5px dashed rgba(108,143,255,0.3);
+  border-radius: 14px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 1.25rem;
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: rgba(108,143,255,0.65);
+  background: rgba(108,143,255,0.04);
+}
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0;
+  cursor: pointer; width: 100%; height: 100%;
+}
+.upload-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(108,143,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+}
+.upload-icon svg { width: 22px; height: 22px; }
+.upload-text {
+  font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 4px;
+}
+.upload-sub { font-size: 11px; color: var(--muted); }
+.upload-filename {
+  margin-top: 10px; font-size: 12px;
+  color: var(--green); font-family: var(--mono);
+  display: none;
+}
+.upload-filename.visible { display: block; }
+
+/* ── Divider ── */
+.divider {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.divider span { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* ── Textarea ── */
+.field-label {
+  font-size: 11px; font-weight: 500; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 8px; display: block;
+}
+textarea {
+  width: 100%; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border2);
+  border-radius: 12px; color: var(--text);
+  font-family: var(--font); font-size: 13px;
+  padding: 12px 14px; resize: vertical;
+  min-height: 120px; outline: none; line-height: 1.6;
+  transition: border-color 0.2s;
+  margin-bottom: 1.5rem;
+}
+textarea::placeholder { color: #3d4155; }
+textarea:focus { border-color: rgba(108,143,255,0.5); }
+.field-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-bottom: 1rem;
+}
+.field-input, .field-select {
+  width: 100%; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border2);
+  border-radius: 12px; color: var(--text);
+  font-family: var(--font); font-size: 13px;
+  padding: 11px 12px; outline: none;
+}
+.field-select option { color: #111520; }
+@media (max-width: 640px) {
+  .field-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Submit button ── */
+.submit-btn {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, #6c8fff, #b07ef8);
+  border: none; border-radius: 12px;
+  color: #fff; font-family: var(--font);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; letter-spacing: 0.2px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.2s, transform 0.15s;
+  position: relative; overflow: hidden;
+}
+.submit-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background 0.15s;
+}
+.submit-btn:hover::after { background: rgba(255,255,255,0.08); }
+.submit-btn:active { transform: scale(0.985); }
+.submit-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ── Loading state ── */
+.submit-btn.loading { opacity: 0.7; pointer-events: none; }
+.spinner {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite; display: none;
+}
+.submit-btn.loading .btn-label { display: none; }
+.submit-btn.loading .spinner { display: block; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Privacy note ── */
+.privacy-note {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 1rem; justify-content: center;
+  font-size: 11px; color: var(--muted);
+}
+.privacy-note svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* ── Flash messages ── */
+.flash-msg {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.25);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: 12px; color: #f87171;
+  margin-bottom: 1.25rem;
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.flash-msg svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .page { grid-template-columns: 1fr; }
+  .left-panel {
+    padding: 3rem 2rem 2rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 2rem; }
+  .hero-sub { max-width: 100%; }
+  .right-panel { padding: 2rem; }
+  .form-card { max-width: 100%; }
+  .stats-row { gap: 1.5rem; }
+}
+@media (max-width: 480px) {
+  .left-panel { padding: 2rem 1.5rem; }
+  .right-panel { padding: 1.5rem; }
+  .form-card { padding: 1.75rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="page">
+
+  <!-- ══ LEFT — Branding ══ -->
+  <div class="left-panel">
+
+    <div class="logo-row">
+      <div class="logo-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.6">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+      </div>
+      <div class="logo-name">ResumeAI <span>/ Career Intelligence</span></div>
+    </div>
+
+    <div class="hero-tag">
+      <div class="dot"></div>
+      AI-Powered Analysis
+    </div>
+
+    <h1>
+      Smart Resume<br>
+      <span class="grad">Screening Engine</span>
+    </h1>
+
+    <p class="hero-sub">
+      Upload your resume, paste a job description — our AI analyzes skill gaps, generates a personalized roadmap, and gives you actionable career advice in seconds.
+    </p>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon fi-blue">
+          <svg fill="none" viewBox="0 0 24 24" stroke="#6c8fff" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+        <div class="feature-text">
+          <strong>Weighted Skill Matching</strong>
+          70+ skills detected with smart synonym matching and priority scoring
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon fi-purple">
+          <svg fill="none" viewBox="0 0 24 24" stroke="#b07ef8" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+          </svg>
+        </div>
+        <div class="feature-text">
+          <strong>3-Phase Learning Roadmap</strong>
+          Personalized month-by-month plan to bridge your skill gaps
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon fi-green">
+          <svg fill="none" viewBox="0 0 24 24" stroke="#3ecf8e" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+          </svg>
+        </div>
+        <div class="feature-text">
+          <strong>AI Career Chatbot</strong>
+          Ask anything — interview tips, salary advice, skill recommendations
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon fi-amber">
+          <svg fill="none" viewBox="0 0 24 24" stroke="#f4a942" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <div class="feature-text">
+          <strong>Secure & Private</strong>
+          Files processed instantly and deleted — never stored
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-num">70+</div>
+        <div class="stat-lbl">Skills detected</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">3s</div>
+        <div class="stat-lbl">Analysis time</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">100%</div>
+        <div class="stat-lbl">AI powered</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ RIGHT — Form ══ -->
+  <div class="right-panel">
+      <div class="form-card">
+
+      <div class="form-title">Analyze your resume</div>
+      <div class="form-sub">Upload your resume; job matching starts automatically</div>
+
+      <!-- Flash messages from Flask -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+          <div class="flash-msg">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ message }}
+          </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+
+        <!-- Upload zone -->
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" name="resume" accept=".pdf" required id="file-input"/>
+          <div class="upload-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="#6c8fff" stroke-width="1.6">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </div>
+          <div class="upload-text">Drop your resume here</div>
+          <div class="upload-sub">or click to browse — PDF only, max 10MB</div>
+          <div class="upload-filename" id="filename-display"></div>
+        </div>
+
+        <div class="divider"><span>optional targeting</span></div>
+
+        <div class="field-grid">
+          <div>
+            <label class="field-label">Preferred Role</label>
+            <input class="field-input" name="preferred_role" placeholder="Python Developer"/>
+          </div>
+          <div>
+            <label class="field-label">Location</label>
+            <input class="field-input" name="location" placeholder="Pune, Remote"/>
+          </div>
+          <div>
+            <label class="field-label">Work Mode</label>
+            <select class="field-select" name="work_mode">
+              <option value="">Any</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="onsite">Onsite</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Email Alerts</label>
+            <input class="field-input" type="email" name="email" placeholder="you@example.com"/>
+          </div>
+        </div>
+
+        <label class="field-label">Job Description / Required Skills (Optional)</label>
+        <textarea name="job_description" rows="5"
+          placeholder="Paste a specific job description only when you want the original skill-gap analysis for one target role."></textarea>
+
+        <button type="submit" class="submit-btn" id="submit-btn">
+          <div class="spinner"></div>
+          <span class="btn-label" style="display:flex;align-items:center;gap:8px">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            Analyze Resume
+          </span>
+        </button>
+
+      </form>
+
+      <div class="privacy-note">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        Your resume is processed securely and deleted immediately
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const zone    = document.getElementById('upload-zone');
+const input   = document.getElementById('file-input');
+const display = document.getElementById('filename-display');
+const form    = document.getElementById('upload-form');
+const btn     = document.getElementById('submit-btn');
+
+input.addEventListener('change', () => {
+  if (input.files[0]) {
+    display.textContent = '✓ ' + input.files[0].name;
+    display.classList.add('visible');
+    zone.style.borderColor = 'rgba(62,207,142,0.5)';
+  }
+});
+
+zone.addEventListener('dragover', e => {
+  e.preventDefault();
+  zone.classList.add('dragover');
+});
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') {
+    input.files = e.dataTransfer.files;
+    display.textContent = '✓ ' + file.name;
+    display.classList.add('visible');
+    zone.style.borderColor = 'rgba(62,207,142,0.5)';
+  }
+});
+
+form.addEventListener('submit', () => {
+  btn.classList.add('loading');
+});
+</script>
+<!-- ───────── CHATBOT UI ───────── -->
+<style>
+.chatbot-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#6c8fff,#b07ef8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9999;
+}
+
+.chatbot-box {
+  position: fixed;
+  top: 90px;
+  right: 20px;
+  width: 320px;
+  height: 420px;
+  background: #111318;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.chat-header {
+  padding: 10px;
+  background: #181c26;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.chat-input {
+  display: flex;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: white;
+}
+
+.chat-input button {
+  padding: 10px;
+  border: none;
+  background: #6c8fff;
+  color: white;
+  cursor: pointer;
+}
+</style>
+
+<div class="chatbot-btn" onclick="toggleChat()">💬</div>
+
+<div class="chatbot-box" id="chatbox">
+  <div class="chat-header">AI Career Assistant</div>
+  <div class="chat-messages" id="messages"></div>
+
+  <div class="chat-input">
+    <input type="text" id="msg" placeholder="Ask anything..." />
+    <button onclick="sendMsg()">Send</button>
+  </div>
+</div>
+
+<script>
+let chatOpen = false;
+let history = [];
+
+function toggleChat(){
+  chatOpen = !chatOpen;
+  document.getElementById("chatbox").style.display = chatOpen ? "flex" : "none";
+}
+
+function addMsg(text, sender){
+  const div = document.createElement("div");
+  div.style.marginBottom = "8px";
+  div.innerHTML = `<b>${sender}:</b> ${text}`;
+  document.getElementById("messages").appendChild(div);
+}
+
+async function sendMsg(){
+  const input = document.getElementById("msg");
+  const text = input.value.trim();
+  if(!text) return;
+
+  addMsg(text,"You");
+  history.push({role:"user", content:text});
+  input.value = "";
+
+  try {
+    const res = await fetch("/chat", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({messages: history})
+    });
+
+    const data = await res.json();
+    addMsg(data.reply,"AI");
+
+    history.push({role:"assistant", content:data.reply});
+
+  } catch(err){
+    addMsg("Error connecting AI","System");
+  }
+}
+</script>
+
+
+<!-- ═══════════ PREMIUM CHATBOT (index page — general mode) ═══════════ -->
+<style>
+:root {
+  --cb-bg:#13151f;--cb-surface:#1a1d2e;--cb-card:#20243a;
+  --cb-border:rgba(255,255,255,0.07);--cb-border2:rgba(255,255,255,0.13);
+  --cb-text:#e2e5f0;--cb-muted:#6b7280;--cb-green:#34d399;--cb-font:'Sora',sans-serif;
+}
+#cb-fab{position:fixed;bottom:28px;right:28px;z-index:10000;width:60px;height:60px;
+  border-radius:50%;border:none;background:linear-gradient(135deg,#5b8cf7,#a78bfa);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 32px rgba(91,140,247,.45);
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;}
+#cb-fab:hover{transform:scale(1.1);box-shadow:0 12px 40px rgba(91,140,247,.6);}
+.fab-chat,.fab-close{transition:opacity .2s,transform .2s;position:absolute;}
+.fab-close{opacity:0;transform:rotate(-90deg) scale(.6);}
+#cb-fab.open .fab-chat{opacity:0;transform:rotate(90deg) scale(.6);}
+#cb-fab.open .fab-close{opacity:1;transform:rotate(0deg) scale(1);}
+#cb-fab::after{content:'';position:absolute;inset:-4px;border-radius:50%;
+  border:2px solid rgba(91,140,247,.35);animation:cb-ping 2.4s cubic-bezier(0,0,.2,1) infinite;}
+@keyframes cb-ping{0%{transform:scale(1);opacity:.6}75%,100%{transform:scale(1.35);opacity:0}}
+#cb-notif{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;
+  background:#34d399;border:2px solid #0a0c10;font-size:8px;color:#0a0c10;font-weight:700;
+  display:flex;align-items:center;justify-content:center;transition:transform .3s;}
+#cb-fab.open #cb-notif{transform:scale(0);}
+#cb-window{position:fixed;bottom:102px;right:28px;z-index:9999;width:380px;height:540px;
+  background:var(--cb-bg);border:1px solid var(--cb-border2);border-radius:20px;
+  display:flex;flex-direction:column;overflow:hidden;
+  transform:scale(.88) translateY(24px);opacity:0;pointer-events:none;transform-origin:bottom right;
+  transition:transform .3s cubic-bezier(.34,1.4,.64,1),opacity .22s ease;
+  box-shadow:0 24px 64px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04);}
+#cb-window.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
+@media(max-width:480px){
+#cb-window{right:12px;left:12px;width:auto;bottom:96px;height:72vh;}
+#cb-fab{right:16px;bottom:16px;}
+}
+.cb-header{padding:14px 16px;background:var(--cb-surface);border-bottom:1px solid var(--cb-border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;position:relative;}
+.cb-header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,#5b8cf7,#a78bfa,#5b8cf7);background-size:200% 100%;
+  animation:cb-shimmer 3s linear infinite;}
+@keyframes cb-shimmer{to{background-position:-200% 0}}
+.cb-avatar-wrap{position:relative;flex-shrink:0;}
+.cb-avatar{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#5b8cf7,#a78bfa);
+  display:flex;align-items:center;justify-content:center;}
+.cb-status-ring{position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;
+  background:#34d399;border:2px solid var(--cb-bg);animation:cb-pulse 2s ease-in-out infinite;}
+@keyframes cb-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.cb-hname{font-size:13px;font-weight:600;color:var(--cb-text);line-height:1.2;}
+.cb-hsub{font-size:11px;color:var(--cb-green);margin-top:1px;}
+.cb-close-btn{background:rgba(255,255,255,.05);border:1px solid var(--cb-border);border-radius:8px;
+  width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--cb-muted);flex-shrink:0;transition:background .15s,color .15s;}
+.cb-close-btn:hover{background:rgba(255,255,255,.1);color:var(--cb-text);}
+#cb-msgs{flex:1;overflow-y:auto;padding:16px 14px 8px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;}
+#cb-msgs::-webkit-scrollbar{width:3px;}
+#cb-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
+.cb-row{display:flex;gap:8px;align-items:flex-end;animation:cb-fadein .25s ease;}
+.cb-row.user{flex-direction:row-reverse;}
+@keyframes cb-fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.cb-msg-av{width:28px;height:28px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.cb-row.bot .cb-msg-av{background:linear-gradient(135deg,#5b8cf7,#a78bfa);}
+.cb-row.user .cb-msg-av{background:rgba(255,255,255,.07);border:1px solid var(--cb-border2);}
+.cb-bubble{max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.6;word-break:break-word;}
+.cb-row.bot .cb-bubble{background:#20243a;color:#c8cce0;border:1px solid var(--cb-border);border-bottom-left-radius:4px;}
+.cb-row.user .cb-bubble{background:linear-gradient(135deg,#5b8cf7,#a78bfa);color:#fff;border-bottom-right-radius:4px;}
+.cb-ts{font-size:10px;color:var(--cb-muted);margin-top:3px;padding:0 4px;}
+.cb-row.user .cb-ts{text-align:right;}
+.cb-typing{display:flex;gap:4px;align-items:center;padding:6px 2px;}
+.cb-typing span{width:6px;height:6px;border-radius:50%;background:#5b8cf7;animation:cb-bounce 1.1s ease-in-out infinite;}
+.cb-typing span:nth-child(2){animation-delay:.18s;background:#8b7cf7;}
+.cb-typing span:nth-child(3){animation-delay:.36s;background:#a78bfa;}
+@keyframes cb-bounce{0%,60%,100%{transform:translateY(0);opacity:.6}30%{transform:translateY(-6px);opacity:1}}
+.cb-welcome{background:var(--cb-surface);border:1px solid rgba(91,140,247,.2);border-radius:14px;padding:16px;margin-bottom:4px;}
+.cb-welcome-title{font-size:14px;font-weight:600;color:var(--cb-text);margin-bottom:6px;}
+.cb-welcome-body{font-size:12px;color:var(--cb-muted);line-height:1.65;}
+.cb-suggestions{padding:6px 14px 10px;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0;}
+.cb-chip{background:rgba(91,140,247,.08);border:1px solid rgba(91,140,247,.22);color:#8ba8ff;
+  border-radius:20px;padding:5px 12px;font-size:11px;font-family:var(--cb-font);cursor:pointer;
+  white-space:nowrap;transition:background .15s,border-color .15s,transform .1s;}
+.cb-chip:hover{background:rgba(91,140,247,.18);border-color:rgba(91,140,247,.45);transform:translateY(-1px);}
+.cb-divider{display:flex;align-items:center;gap:8px;padding:4px 0;width:100%;}
+.cb-divider::before,.cb-divider::after{content:'';flex:1;height:1px;background:var(--cb-border);}
+.cb-divider span{font-size:10px;color:var(--cb-muted);white-space:nowrap;}
+.cb-input-area{padding:10px 12px 14px;background:var(--cb-surface);border-top:1px solid var(--cb-border);
+  display:flex;align-items:flex-end;gap:8px;flex-shrink:0;}
+#cb-input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--cb-border2);border-radius:14px;
+  color:var(--cb-text);font-family:var(--cb-font);font-size:13px;padding:10px 14px;resize:none;
+  outline:none;max-height:110px;line-height:1.5;transition:border-color .18s,background .18s;}
+#cb-input::placeholder{color:#3a3f55;}
+#cb-input:focus{border-color:rgba(91,140,247,.5);background:rgba(91,140,247,.04);}
+#cb-send{width:40px;height:40px;flex-shrink:0;border-radius:12px;
+  background:linear-gradient(135deg,#5b8cf7,#a78bfa);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:opacity .15s,transform .15s;}
+#cb-send:hover{opacity:.88;transform:scale(1.06);}#cb-send:active{transform:scale(.95);}
+#cb-send:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.cb-powered{text-align:center;font-size:10px;color:#2e3249;padding:6px 0 2px;flex-shrink:0;}
+.cb-powered span{color:#4a5070;}
+</style>
+
+<button id="cb-fab" onclick="cbToggle()" aria-label="Chat with AI Assistant">
+  <div id="cb-notif">1</div>
+  <svg class="fab-chat" width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.7">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+  </svg>
+  <svg class="fab-close" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+  </svg>
+</button>
+
+<div id="cb-window" role="dialog" aria-label="AI Career Assistant">
+  <div class="cb-header">
+    <div class="cb-avatar-wrap">
+      <div class="cb-avatar">
+        <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.7" width="20" height="20">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+      </div>
+      <div class="cb-status-ring"></div>
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div class="cb-hname">Career Assistant</div>
+      <div class="cb-hsub">● AI Online — powered by Claude</div>
+    </div>
+    <button class="cb-close-btn" onclick="cbToggle()">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="cb-msgs">
+    <div class="cb-welcome">
+      <div class="cb-welcome-title">👋 Hi! I'm your AI Career Assistant</div>
+      <div class="cb-welcome-body">Upload your resume and paste a job description above to get your personalized analysis. Meanwhile, ask me anything about careers, skills, or job hunting!</div>
+    </div>
+    <div class="cb-row bot">
+      <div class="cb-msg-av">
+        <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8" width="16" height="16">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="cb-bubble">Namaste! 👋 Resume upload karo aur job description paste karo — main aapki poori career analysis dunga. Ya abhi kuch bhi poochho!</div>
+        <div class="cb-ts" id="cb-ts0"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cb-suggestions" id="cb-chips">
+    <div class="cb-divider"><span>Quick questions</span></div>
+    <button class="cb-chip" onclick="cbChip(this)">📄 PDF kaise upload karein?</button>
+    <button class="cb-chip" onclick="cbChip(this)">🤖 Ye tool kya karta hai?</button>
+    <button class="cb-chip" onclick="cbChip(this)">💡 Good job description kaise likhein?</button>
+    <button class="cb-chip" onclick="cbChip(this)">🎯 ATS resume tips</button>
+  </div>
+
+  <div class="cb-input-area">
+    <textarea id="cb-input" rows="1" placeholder="Kuch bhi poochho…"
+      onkeydown="cbKey(event)" oninput="cbResize(this)"></textarea>
+    <button id="cb-send" onclick="cbSend()">
+      <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2" width="17" height="17">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+      </svg>
+    </button>
+  </div>
+  <div class="cb-powered">Powered by <span>Claude AI · Anthropic</span></div>
+</div>
+
+<script>
+const IDX_SYSTEM = `You are a helpful AI Career Assistant on a resume screening tool homepage.
+Help users understand how to use the tool, give general career advice, resume tips, job hunting strategies.
+Reply in the same language as the user (Hinglish/Hindi/English). Be warm, concise, practical.`;
+
+let cbHistory = [], cbBusy = false, cbIsOpen = false;
+
+function cbNow(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+document.getElementById('cb-ts0').textContent = cbNow();
+
+function cbToggle(){
+  cbIsOpen = !cbIsOpen;
+  document.getElementById('cb-fab').classList.toggle('open', cbIsOpen);
+  document.getElementById('cb-window').classList.toggle('open', cbIsOpen);
+  if(cbIsOpen){
+    document.getElementById('cb-notif').style.display='none';
+    setTimeout(()=>document.getElementById('cb-input').focus(),280);
+  }
+}
+function cbChip(btn){
+  const t = btn.textContent.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{27FF}]\s*/u,'').trim();
+  document.getElementById('cb-chips').style.display='none';
+  document.getElementById('cb-input').value = t;
+  cbSend();
+}
+function cbResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+function cbKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();cbSend();}}
+
+function cbAppend(role,text){
+  const msgs=document.getElementById('cb-msgs');
+  const row=document.createElement('div'); row.className='cb-row '+role;
+  const av=document.createElement('div'); av.className='cb-msg-av';
+  av.innerHTML = role==='bot'
+    ? `<svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>`
+    : '👤';
+  const wrap=document.createElement('div');
+  const bbl=document.createElement('div'); bbl.className='cb-bubble';
+  bbl.innerHTML=text.replace(/\n/g,'<br>');
+  const ts=document.createElement('div'); ts.className='cb-ts'; ts.textContent=cbNow();
+  wrap.appendChild(bbl); wrap.appendChild(ts);
+  row.appendChild(av); row.appendChild(wrap);
+  msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
+}
+function cbShowTyping(){
+  const msgs=document.getElementById('cb-msgs');
+  const row=document.createElement('div'); row.className='cb-row bot'; row.id='cb-ty';
+  const av=document.createElement('div'); av.className='cb-msg-av';
+  av.innerHTML=`<svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>`;
+  const bbl=document.createElement('div'); bbl.className='cb-bubble';
+  bbl.innerHTML='<div class="cb-typing"><span></span><span></span><span></span></div>';
+  row.appendChild(av); row.appendChild(bbl); msgs.appendChild(row);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function cbHideTyping(){const e=document.getElementById('cb-ty'); if(e)e.remove();}
+
+async function cbSend(){
+  if(cbBusy)return;
+  const inp=document.getElementById('cb-input');
+  const text=inp.value.trim(); if(!text)return;
+  inp.value=''; inp.style.height='auto';
+  cbAppend('user',text);
+  cbHistory.push({role:'user',content:text});
+  cbBusy=true; document.getElementById('cb-send').disabled=true;
+  cbShowTyping();
+  try{
+    const res=await fetch('/chat',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:cbHistory.slice(-12),system:IDX_SYSTEM})});
+    cbHideTyping();
+    const data=await res.json();
+    const reply=data.reply||'Kuch issue aa gaya, dobara try karein.';
+    if(!res.ok){
+      cbAppend('bot',reply);
+      return;
+    }
+    cbAppend('bot',reply);
+    cbHistory.push({role:'assistant',content:reply});
+  }catch(err){
+    cbHideTyping();
+    cbAppend('bot','Server se connect nahi ho pa raha. Flask app running hai aur internet/API key sahi hai, yeh check karein.');
+  }finally{
+    cbBusy=false;
+    document.getElementById('cb-send').disabled=false;
+    document.getElementById('cb-input').focus();
+  }
+}
+</script>
+
+</body>
+</html>
